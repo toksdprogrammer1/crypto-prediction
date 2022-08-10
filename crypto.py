@@ -28,8 +28,8 @@ from datetime import datetime, timedelta
 from numpy import array
 
 # client configuration
-api_key = ''
-api_secret = ''
+api_key = 'idmOCAIblc90XngE8tEWY5IzL9QaRzkYI9zIVmhnykuKXVOPG6QutfqccgXcasRN'
+api_secret = 'f6LoCilAcbdReBHNDnLmqRmnt8GZMKkLHfJxfLrIg2dexpE6j51TMvIZH5Gv8dIi'
 interval = '1d'
 data_dir = "./data/"
 
@@ -207,7 +207,7 @@ def predict_future_days(all_data, time_steps,  pred_days, model, sc):
     last_date = all_data["close_time"].iloc[-1]
     dt_object = datetime.fromtimestamp(last_date/1000)
     print(dt_object)
-    days = pd.date_range(dt_object, dt_object + timedelta(pred_days - 1), freq='D')
+    days = pd.date_range(dt_object - timedelta(1), dt_object + timedelta(pred_days - 2), freq='D')
     print(days)
     future_preds = pd.DataFrame({
          'close': next_predicted_days_value
@@ -225,7 +225,7 @@ data_load_state = st.text('Loading data and creating model...')
 all_data = load_and_clean_data_from_api(api_key,api_secret,interval,symbol,data_dir)
 
 # change the timestamp
-all_data.index = [dt.datetime.fromtimestamp(x / 1000.0) for x in all_data.close_time]
+all_data.index = [(dt.datetime.fromtimestamp(x / 1000.0) - timedelta(2)) for x in all_data.close_time]
 
 # convert data to float and plot
 all_data = all_data.astype(float)
@@ -281,7 +281,7 @@ macd = MACD(merged['close']).macd()
 rsi = RSIIndicator(merged['close']).rsi()
 
 
-st.write('Stock Bollinger Bands')
+st.write('Bollinger Bands')
 
 st.line_chart(bb)
 
@@ -289,10 +289,10 @@ progress_bar = st.progress(0)
 
 # https://share.streamlit.io/daniellewisdl/streamlit-cheat-sheet/app.py
 
-st.write('Stock Moving Average Convergence Divergence (MACD)')
+st.write('Moving Average Convergence Divergence (MACD)')
 st.area_chart(macd)
 
-st.write('Stock RSI ')
+st.write('RSI ')
 st.line_chart(rsi)
 
 

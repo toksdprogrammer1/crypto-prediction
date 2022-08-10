@@ -28,11 +28,11 @@ from numpy import array
 
 def main():
     # client configuration
-    api_key = ''
-    api_secret = ''
+    api_key = 'idmOCAIblc90XngE8tEWY5IzL9QaRzkYI9zIVmhnykuKXVOPG6QutfqccgXcasRN'
+    api_secret = 'f6LoCilAcbdReBHNDnLmqRmnt8GZMKkLHfJxfLrIg2dexpE6j51TMvIZH5Gv8dIi'
 
-    #symbol = "BTCUSDT"
-    symbol = "ETHUSDT"
+    symbol = "BTCUSDT"
+    #symbol = "ETHUSDT"
     interval = '1d'
     Client.KLINE_INTERVAL_1DAY
     data_dir = "./data/"
@@ -55,7 +55,7 @@ def main():
     #fig = go.Figure(data=go.Scatter(x=all_data.index, y=all_data['close'], mode='lines+markers'))
     #fig.show()
 
-    X_train, y_train, X_test, sc = ts_train_test_normalize(all_data, 5, 1)
+    X_train, y_train, X_test, sc = ts_train_test_normalize(all_data, 10, 1)
     X_train.shape[0], X_train.shape[1]
 
     # Convert the 3-D shape of X_train to a data frame so we can see:
@@ -93,7 +93,7 @@ def main():
 
 
     #print(X_test)
-    future_preds  = predict_future_days(all_data, 5, 30, my_GRU_model, sc)
+    future_preds  = predict_future_days(all_data, 20, 30, my_GRU_model, sc)
     print("Mean Squared Error")
     print(actual_pred_plot(all_data, GRU_predictions, future_preds))
 
@@ -318,7 +318,7 @@ def GRU_model_regularization(X_train, y_train, X_test, sc):
     # Compiling the RNN
     my_GRU_model.compile(loss="mean_squared_error",optimizer="adam")
     # Fitting to the training set
-    my_GRU_model.fit(X_train, y_train, epochs=50, batch_size=150, verbose=0)
+    my_GRU_model.fit(X_train, y_train, epochs=1000, batch_size=50, verbose=0)
 
 
     GRU_predictions = my_GRU_model.predict(X_test)
