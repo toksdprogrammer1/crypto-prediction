@@ -11,3 +11,5 @@ pip install plotly
 ####
  conda install -c conda-forge keras
 ####
+
+jupyter labextension install jupyterlab-plotly
