@@ -1,3 +1,38 @@
+# NEW PROJECT SETTINGS
+
+### LOCAL ENVIRONMENT
+you can use jupyter notebook or if you are use the py file you need to create a virtual environment.
+`Python 3.10.4` is used at the time of testing. just make sure you have `Python 3.5+` installed on your machine just to avoid any library compatibility issue.
+
+To handle multiple Python version you can use [Pyenv](https://realpython.com/intro-to-pyenv/)
+
+### Steps to create virtual env:
+
+1- create a new virtual environment in current directory.
+
+    python -m venv env
+
+2- then you need to active it using following command (linux or MacOs users)
+
+    source env/bin/activate
+
+for windows user
+    
+    .\env\Scripts\activate
+
+3- now you need to install all the dependent libraries used in the code.
+    
+    pip install -r requirements.txt
+
+4- once everything is install and ready, now you can use and test the code.
+
+    python crypto_price_prediction_streamlit.py
+
+
+
+------------------------------
+
+# OLD
 ####
 install anaconda (https://www.anaconda.com/products/distribution)
 ####
