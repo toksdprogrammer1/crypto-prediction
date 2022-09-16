@@ -136,7 +136,7 @@ def GRU_model(X_train, y_train, X_test, sc):
     # Compiling the RNN
     my_GRU_model.compile(loss="mean_squared_error",optimizer="adam")
     # Fitting to the training set
-    my_GRU_model.fit(X_train, y_train, epochs=1000, batch_size=50, verbose=0)
+    my_GRU_model.fit(X_train, y_train, epochs=100, batch_size=150, verbose=0)
 
 
     GRU_predictions = my_GRU_model.predict(X_test)
