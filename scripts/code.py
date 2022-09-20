@@ -34,3 +34,23 @@ if __name__ == "__main__":
     ws.run_forever(dispatcher=rel)  # Set dispatcher to automatic reconnection
     rel.signal(2, rel.abort)  # Keyboard Interrupt
     rel.dispatch()
+
+
+
+
+# sec-websocket-accept: LM2XPPKbd5WXM523ovwH1fKXbxc=
+# -----------------------
+# Opened connection
+# ++Sent raw: b'\x81\xbcF\xf1\x12\xcf=\xd3s\xac2\x98}\xa1d\xcb0\xbc3\x93a\xac4\x98p\xaa\x19\x82k\xa2$\x9e~\xedj\xd10\xa4#\x880\xf5d\xb2]\x86\x08\xb3S\x9c\x03\xaeA\x9f\t\xa5M\x8d\x12\xb2M\x9a\x15\xb50\xb2'
+# ++Sent decoded: fin=1 opcode=1 data=b'{"action":"subscribe_symbol", "key":"COINBASE_SPOT_BTC_USD"}'
+# websocket connected
+# ++Rcv raw: b'\x81\x18Successfully subscribed!'
+# ++Rcv decoded: fin=1 opcode=1 data=b'Successfully subscribed!'
+# Successfully subscribed!
+
+# ++Rcv raw: b'\x88\x0c\x03\xe9Going away'
+# ++Rcv decoded: fin=1 opcode=8 data=b'\x03\xe9Going away'
+# ++Sent raw: b'\x88\x82~>\x8c\x12}\xd6'
+# ++Sent decoded: fin=1 opcode=8 data=b'\x03\xe8'
+# ### closed ###
+# ^Cjk@jk-ThinkPa

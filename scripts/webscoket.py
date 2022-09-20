@@ -1,15 +1,86 @@
+from typing import Dict
 import websocket
 import _thread
 import time
 import rel
 import json
+import pickle 
+import numpy as np
+import pandas as pd 
+from sklearn.preprocessing import RobustScaler, MinMaxScaler 
 
+
+model = pickle.load(open('model.pkl','rb'))
+
+sequence_length = 50
+
+FEATURES = ['ask_price', 'ask_size', 'bid_price', 'bid_size', 'p_asterisk', 'p_ask_delta', 'p_bid_delta']
+
+def get_data():
+    df = pd.read_csv('20220812.csv')
+    df = df[df['symbol'].str.contains("BTC_USD")]
+    df.index = df.time_coinapi
+
+    df = df.drop(columns=['ts', 'time_exchange', 'time_coinapi', 'id', 'symbol', 'sequence'])
+
+    train_df = df.sort_values(by=['time_coinapi']).copy()
+    train_df = df.head(5000)
+    data = pd.DataFrame(train_df)
+    data['p_asterisk'] = ((data['ask_price'] * data['ask_size']) + (data['bid_price'] * data['bid_size']))/ (data['ask_size'] + data['bid_size'])
+    #data['p_asterisk_delta'] = (data.p_asterisk - data.p_asterisk.shift(1)).abs()
+    #data['p_asterisk_delta'] = data['p_asterisk_delta'].fillna(0)
+    #data['p_asterisk_delta2'] = data.p_asterisk_delta / data.p_asterisk
+    data['p_ask_delta'] = (data.p_asterisk - data.ask_price).abs()
+    data['p_bid_delta'] = (data.p_asterisk - data.bid_price).abs()
+    data['Prediction'] = data['p_asterisk']
+
+    data_filtered = data[FEATURES]
+
+    # We add a prediction column and set dummy values to prepare the data for scaling
+    return data_filtered.copy()
+
+
+def get_predicted_price():
+    jsonStr = '{"symbol": "COINBASE_SPOT_BTC_USD", "askPrice": 21984.88, "bidSize": 9.101E-5, "bidPrice": 21984.06, "askSize": 0.001}'
+    dict = json.loads(jsonStr)
+    p = ((dict['askPrice'] * dict['askSize']) + (dict['bidPrice'] * dict['bidSize']))/ (dict['askSize'] + dict['bidSize'])
+    p_ask_delta = abs(p - dict['askPrice'])
+    p_bid_delta = abs(p - dict['bidPrice'])
+    latest_quote = np.array([[dict['askPrice'], dict['askSize'], dict['bidPrice'], dict['bidSize'], p, p_ask_delta, p_bid_delta]])
+
+    data_filtered_ext = get_data()
+    df_temp = data_filtered_ext[-49:]
+
+    N = sequence_length
+
+    # Get the last N day closing price values and scale the data to be values between 0 and 1
+    last_N_days = df_temp[-sequence_length:].values
+    last_N_days = np.concatenate((last_N_days, latest_quote), axis=0)
+
+    scaler = MinMaxScaler()
+    last_N_days_scaled = scaler.transform(last_N_days)
+
+    # Create an empty list and Append past N days
+    X_test_new = []
+    X_test_new.append(last_N_days_scaled)
+
+    # Convert the X_test data set to a numpy array and reshape the data
+    pred_price_scaled = model.predict(np.array(X_test_new))
+    scaler_pred = MinMaxScaler()
+    pred_price_unscaled = scaler_pred.inverse_transform(pred_price_scaled.reshape(-1, 1))
+
+    # Print last price and predicted price for the next day
+    #price_today = np.round(new_df['ask_price'][-1], 2)
+    predicted_price = np.round(pred_price_unscaled.ravel()[0], 2)
+
+    print(f'The predicted  price is {predicted_price}')
 
 
 def on_message(ws, message):
     print('--'*20)
     print(message)
     print('--'*20)
+    get_predicted_price()
     # data = json.loads(message)
 
     # result = model.predict(data)
