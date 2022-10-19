@@ -25,8 +25,7 @@ n_average = 5
 sequence_length = 60
 timeranges = ['4.0S']
 FEATURES = ['av_ask', 'av_bid', 'p_zoomed', 'da_zoomed', 'db_zoomed']
-# scaler = MinMaxScaler()
-# timeranges.append('4.0S')
+
 
 def get_data(datasource, timerange):
     datasource = datasource.drop(columns=['time_coinapi', 'time_exchange', 'id', 'symbol', 'sequence'])
