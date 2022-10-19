@@ -1,25 +1,24 @@
-####
-install anaconda (https://www.anaconda.com/products/distribution)
-####
-pip install matplotlib   
-####
-pip install plotly
-####
- pip install python-binance
-####
- pip install -U scikit-learn 
-####
- conda install -c conda-forge keras
-####
+### STEPS TO EXECUTE PREDICTOR PY FILE
 
-To start the app crypto_price_prediction_streamlit.py, you will need to install streamtlit using 
-pip install streamlit
+## Steps
 
-And start the app with 
+Python version should be Python >= 3.8
 
-streamlit run crypto_price_prediction_streamlit.py
+1- Create a new virtual environment
+    
+    python -m venv venv
+activate the environment
 
-###
-The chart of the output of the prediction model is displayed using plotly. To see the chart in jupyter notebook, you will need to run the following command on your terminal and restart jupyter notebook
+    source venv/bin/activate
 
-jupyter labextension install jupyterlab-plotly
+you will see something like this
+
+    (venv) jk@jk-ThinkPad-T470:~/crypto-prediction$ 
+
+2- dependencies installation
+
+    pip install -r requirements.txt
+
+3- Execute the file 
+
+    python predictor.py

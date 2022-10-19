@@ -9,6 +9,7 @@ import numpy as np # Fundamental package for scientific computing with Python
 import seaborn as sns # Visualization
 import matplotlib.pyplot as plt # Important package for visualization - we use this to plot the market data
 import tensorflow as tf
+from sklearn.preprocessing import RobustScaler, MinMaxScaler 
 
 models = pickle.load(open(f'model0.pkl','rb'))
 
@@ -22,7 +23,10 @@ average_corrected_errors = [0]
 average_N_errors = [0]
 n_average = 5
 sequence_length = 60
-
+timeranges = ['4.0S']
+FEATURES = ['av_ask', 'av_bid', 'p_zoomed', 'da_zoomed', 'db_zoomed']
+# scaler = MinMaxScaler()
+# timeranges.append('4.0S')
 
 def get_data(datasource, timerange):
     datasource = datasource.drop(columns=['time_coinapi', 'time_exchange', 'id', 'symbol', 'sequence'])
@@ -40,11 +44,42 @@ def get_data(datasource, timerange):
     datasource.fillna(method="ffill", inplace=True)
     datasource.fillna(method="bfill", inplace=True)
     datasource.fillna(0, inplace=True)
-    return datasource
+
+    filtered = datasource[FEATURES]
+
+    # Convert the data to numpy values
+    np_data_unscaled = np.array(filtered)
+
+    # Transform the data by scaling each feature to a range between 0 and 1
+    scaler      = MinMaxScaler()
+    scaler_pred = MinMaxScaler()
+    scaler_da   = MinMaxScaler()
+    scaler_db   = MinMaxScaler()
+
+    p = pd.DataFrame(filtered['p_zoomed'])
+    da = pd.DataFrame(filtered['da_zoomed'])
+    db = pd.DataFrame(filtered['db_zoomed'])
+
+    np_data_scaled = scaler.fit_transform(np_data_unscaled)
+    scaler_pred.fit_transform(p)
+    scaler_da.fit_transform(da)
+    scaler_db.fit_transform(db)
+
+    # Split the training data into train and train data sets
+    # As a first step, we get the number of rows to train the model on 80% of the data
+    # train_data_len = math.ceil(np_data_scaled.shape[0] * 0.8)
+
+    # Create the training and test data
+    # tr_data = np_data_scaled[0:train_data_len, :]
+    # ts_data = np_data_scaled[train_data_len - sequence_len:, :]
+
+    scalers = [scaler, scaler_pred, scaler_da, scaler_db]
+
+    return datasource, scalers
 
 
 def on_message(ws, message):
-    if         ("Successfully subscribed!" in message) \
+    if  ("Successfully subscribed!" in message) \
             or ("Received Prediction!" in message) \
             or ("QUOTE_COINBASE_SPOT_BTC_USD" not in message):
         return
@@ -66,47 +101,51 @@ def on_message(ws, message):
             'ts': temp.get('timeCoinApi')
         }
 
-    anotherdf = pd.concat([anotherdf, pd.DataFrame.from_records([data])])
+    try:
 
-    prediction_base = get_data(anotherdf, index).tail(sequence_length)
-    prediction_base = prediction_base[FEATURES]
-    prediction_base_scaled = scalers[index][0].transform(prediction_base.values)
+        anotherdf = pd.concat([anotherdf, pd.DataFrame.from_records([data])])
 
-    if prediction_base.shape[0] >= sequence_length:
-        prediction = models[index].predict(np.array(prediction_base_scaled.reshape(-1, sequence_length, len(FEATURES))),verbose = 0)
-        pred_p = scalers[index][1].inverse_transform(prediction[:,0].reshape(-1,1))[0][0]
+        prediction_base, scalers = get_data(anotherdf, index)
+        prediction_base = prediction_base.tail(sequence_length)
+        prediction_base = prediction_base[FEATURES]
+        prediction_base_scaled = scalers[0].transform(prediction_base.values)
 
-        p = pred_p
-        errors.append(p - data.get('ask_price'))
+        if prediction_base.shape[0] >= sequence_length:
+            prediction = models.predict(np.array(prediction_base_scaled.reshape(-1, sequence_length, len(FEATURES))),verbose = 0)
+            pred_p = scalers[1].inverse_transform(prediction[:,0].reshape(-1,1))[0][0]
 
-        average_N_errors.append(np.average(errors[-n_average:]))
-        if len(errors) > 2:
-            p = p - average_N_errors[-1]
+            p = pred_p
+            errors.append(p - data.get('ask_price'))
 
-        print(f"point: {anotherdf.shape[0]}::  \task_price: {data.get('ask_price')} ::  \tpredicted price: {p} (${p - data.get('ask_price')} or {np.round(100 - (data.get('ask_price') * 100)/p, 6)}%)")
+            average_N_errors.append(np.average(errors[-n_average:]))
+            if len(errors) > 2:
+                p = p - average_N_errors[-1]
 
-        predictions.append(float(p))
-        real_prices.append(data.get('ask_price'))
-        corrected_errors.append(abs(np.round(100 - (data.get('ask_price') * 100)/p, 6)))
-        average_corrected_errors.append(np.average(corrected_errors))
+            print(f"point: {anotherdf.shape[0]}::  \task_price: {data.get('ask_price')} ::  \tpredicted price: {p} (${p - data.get('ask_price')} or {np.round(100 - (data.get('ask_price') * 100)/p, 6)}%)")
 
-        if data.get('symbol') == "QUOTE_COINBASE_SPOT_BTC_USD":
-            response_payload = {
-                "action": "publish_predictions",
-                "payload": [{
-                    "symbol_id": str(data.get('id')),
-                    "price": float(p),
-                    "side": "TEST"
-                }]
-            }
-            # print(response_payload)
-            response = json.dumps(response_payload)
-            ws.send(f'{response}')
+            predictions.append(float(p))
+            real_prices.append(data.get('ask_price'))
+            corrected_errors.append(abs(np.round(100 - (data.get('ask_price') * 100)/p, 6)))
+            average_corrected_errors.append(np.average(corrected_errors))
+
+            if data.get('symbol') == "QUOTE_COINBASE_SPOT_BTC_USD":
+                response_payload = {
+                    "action": "publish_predictions",
+                    "payload": [{
+                        "symbol_id": str(data.get('id')),
+                        "price": float(p),
+                        "side": "TEST"
+                    }]
+                }
+                # print(response_payload)
+                response = json.dumps(response_payload)
+                ws.send(f'{response}')
+            else:
+                return
         else:
-            return
-    else:
-        print(f"{anotherdf.shape[0]} point ask_price:  \t{data.get('ask_price')}   \t:: {prediction_base.shape[0]}/{sequence_length}... accumulating data")
-
+            print(f"{anotherdf.shape[0]} point ask_price:  \t{data.get('ask_price')}   \t:: {prediction_base.shape[0]}/{sequence_length}... accumulating data")
+    except Exception as e:
+        raise e
 
 def on_error(ws, error):
     print("Error: ", error)
