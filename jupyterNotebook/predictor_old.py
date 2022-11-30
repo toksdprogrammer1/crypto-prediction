@@ -116,6 +116,8 @@ def on_message(ws, message):
             p = pred_p
             errors.append(p - data.get('ask_price'))
 
+            errors = 0.8 * errors + 0.2 * (p - data.get('ask_price'))
+
             average_N_errors.append(np.average(errors[-n_average:]))
             if len(errors) > 2:
                 p = p - average_N_errors[-1]
